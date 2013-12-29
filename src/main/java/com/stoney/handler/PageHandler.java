@@ -4,14 +4,15 @@ package com.stoney.handler;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.FileEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.jsoup.helper.HttpConnection;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -21,16 +22,85 @@ public class PageHandler extends BaseHandler{
 
     private static AtomicInteger index = new AtomicInteger(0);
 
-    public static void process(String url) {
-        print("PageHandler process %s.", url);
+    public static void process(String url){
+        print("StaticHandler process %s.", url);
         String path = SAVE_DIR + "/" + extaFileDir(url) + "/" + extaFilePath(url);
-        File outFile = new File(path + "/" + extaFileName(url));
+        File outFile = new File(path + "/" + extaFileName(url) + "_" + extaFileQuery(url) + ".html");
         if(isSaveFile(outFile)){
             checkDir(path);
-            CloseableHttpClient httpClient = (CloseableHttpClient) createHttpClient();
+            try {
+                URL uri = new URL(url);
+                HttpURLConnection conn = (HttpURLConnection) uri.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(20000);
+                conn.setReadTimeout(2000);
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
+                conn.setUseCaches(false);
+                conn.connect();
+                if(savePage(conn, outFile)){
+                    addSucceed(url);
+                    print("[%d] Save Page succeed.", index.get(), url, outFile.getAbsoluteFile());
+                } else{
+                    putMedia(url);
+                    print("[%d] Save Page <%s>|##|<%s> failed.", index.get(), url, outFile.getAbsoluteFile());
+                }
+
+            } catch (Exception e) {
+                addFailed(url);
+                putMedia(url);
+                print("[%d] Get Page <%s> error.", index.get() ,url);
+                index.incrementAndGet();
+                e.printStackTrace();
+            } finally {
+                try {
+                    BootHandler.start(url);
+                } catch (IOException e) {
+                }
+            }
+        }
+    }
+    public static boolean savePage(HttpURLConnection conn, File outfile) throws Exception {
+        boolean flag = false;
+        if(conn.getResponseCode() == 200) {
+            BufferedReader reader = null;
+            BufferedWriter writer = null;
+            InputStream in = null;
+            try {
+                in = conn.getInputStream();
+                reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+                writer = new BufferedWriter(new FileWriter(outfile));
+//                char buf[] = new char[1024];
+//                while(reader.read(buf) != -1){
+//                    writer.write(buf);
+//                }
+                int b = 0;
+                while ((b = reader.read()) != -1) {
+                    writer.write(b);
+                }
+                writer.flush();
+                flag = true;
+            } catch (Exception e){
+                flag = false;
+                e.printStackTrace();
+            } finally {
+                close(reader);
+                close(in);
+                close(writer);
+            }
+        }
+        return flag;
+    }
+    public static void process2(String url) {
+        print("PageHandler process %s.", url);
+        String path = SAVE_DIR + "/" + extaFileDir(url) + "/" + extaFilePath(url);
+        File outFile = new File(path + "/" + extaFileName(url) + "_" + extaFileQuery(url) + ".html");
+        if(isSaveFile(outFile)){
+            checkDir(path);
+//            CloseableHttpClient httpClient = (CloseableHttpClient) createHttpClient();
+            DefaultHttpClient httpClient = new DefaultHttpClient();
             try {
                 HttpGet httpGet = new HttpGet(url);
-                setTimeOut(httpGet);
                 HttpResponse response = httpClient.execute(httpGet);
                 if(savePage(response, outFile)){
                     addSucceed(url);
@@ -46,7 +116,7 @@ public class PageHandler extends BaseHandler{
                 index.incrementAndGet();
                 e.printStackTrace();
             } finally {
-                close(httpClient);
+                httpClient.getConnectionManager().shutdown();
                 try {
                     BootHandler.start(url);
                 } catch (IOException e) {
@@ -66,7 +136,7 @@ public class PageHandler extends BaseHandler{
                 httpEntity = new BufferedHttpEntity(httpEntity);
                 in = httpEntity.getContent();
                 reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-                writer = new BufferedWriter(new FileWriter(outfile, true));
+                writer = new BufferedWriter(new FileWriter(outfile));
                 char buf[] = new char[1024 * 1024 * 5];
                 while(reader.read(buf) != -1){
                     writer.write(buf);

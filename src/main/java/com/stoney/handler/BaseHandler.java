@@ -1,18 +1,11 @@
 package com.stoney.handler;
 
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.impl.nio.client.HttpAsyncClients;
-import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
-import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
-import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.params.CoreConnectionPNames;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -27,8 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BaseHandler {
 
-    private static PoolingNHttpClientConnectionManager asyncMgr;
-    static PoolingHttpClientConnectionManager httpManager;
     static final String MATH_URL = "spicy.althemist.com";
     static final String INDEX_URL = "http://spicy.althemist.com/index.php";
     static final String BASE_DIR = "d:/Website/";
@@ -47,8 +38,6 @@ public class BaseHandler {
     private final static int timeOut = 20000;
 
     static {
-        initHttpManager();
-        //initAsyncMgr();
         initDir();
         initQueue();
     }
@@ -59,29 +48,28 @@ public class BaseHandler {
             file.mkdirs();
         }
     }
-    public static HttpClient createHttpClient(){
-        return HttpClients.createMinimal(httpManager);
+
+    public static void saveHtml(String url){
+        int timeoutMillis = 20000;
+        String path = SAVE_DIR + "/" + extaFileDir(url) + "/" + extaFilePath(url);
+        File outFile = new File(path + "/" + extaFileName(url) + "_" + extaFileQuery(url) + ".html");
+        BufferedWriter writer = null;
+        if(isSaveFile(outFile)){
+            checkDir(path);
+            try {
+                Document doc = Jsoup.connect(url).timeout(timeoutMillis).get();
+                writer = new BufferedWriter(new FileWriter(outFile));
+                writer.write(doc.html());
+                writer.flush();
+            } catch (Exception e){
+                e.printStackTrace();
+            } finally {
+                close(writer);
+            }
+        }
     }
 
-    /**
-     *  设置请求和传输超时时间
-     *  default 20000
-     * @param request
-     */
-    public static void setTimeOut(HttpRequestBase request){
-        setTimeOut(request, timeOut);
-    }
-    public static void setTimeOut(HttpRequestBase request, int timeOut){
-        request.setConfig(RequestConfig.custom().setSocketTimeout(timeOut).setConnectTimeout(timeOut).build());
-    }
-    public static void initHttpManager(){
-        httpManager = new PoolingHttpClientConnectionManager();
-        httpManager.setMaxTotal(MaxTotal); //defines the overal connection limit for a conneciton pool.
-        httpManager.setDefaultMaxPerRoute(MaxPer);
-    }
-    public static void closeExpiredConnections(){
-        httpManager.closeExpiredConnections();
-    }
+
     public static void putMedia(String url){
         try {
             if(isUrl(url)) mediaQueue.put(url);
@@ -98,6 +86,23 @@ public class BaseHandler {
     }
     public static String extaUrl(String url){
         return url.substring(0,url.lastIndexOf("?"));
+    }
+    public static String extaImgeType(String img){
+        return img.substring(img.lastIndexOf(".") + 1);
+    }
+    public static String extaFileQuery(String url){
+        try {
+            String name = new URL(url).getQuery();
+            if(isEmpty(name) || name.equalsIgnoreCase("/")){
+                return "index";
+            }else{
+                name = name.replaceAll("/", "##");
+            }
+            return name;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        return "index";
     }
     public static String extaFileName(String url){
         try {
@@ -149,15 +154,7 @@ public class BaseHandler {
         failed = new ConcurrentHashMap(10000);
         succeed = new ConcurrentHashMap(10000);
     }
-    public static void initAsyncMgr(){
-        try {
-            asyncMgr = new PoolingNHttpClientConnectionManager(new DefaultConnectingIOReactor());
-            asyncMgr.setMaxTotal(MaxTotal);
-            asyncMgr.setDefaultMaxPerRoute(MaxPer);
-        } catch (IOReactorException e) {
-            e.printStackTrace();
-        }
-    }
+
     public static void initDir(){
         File dir = new File(SAVE_DIR);
         if(!dir.exists()){
@@ -169,28 +166,10 @@ public class BaseHandler {
             dir.canWrite();
         }
     }
-    public static PoolingNHttpClientConnectionManager getAsyncMgr(){
-        return asyncMgr;
-    }
 
-    public static CloseableHttpAsyncClient createClient(){
-        return HttpAsyncClients.createMinimal(asyncMgr);
-    }
 
-    public static void release(){
-        asyncMgr.closeExpiredConnections();
-    }
 
-    public static void close(CloseableHttpAsyncClient s){
-        try{
-            if(s != null) s.close();
-        }catch (IOException e){}
-    }
-    public static void close(CloseableHttpClient s){
-        try{
-            if(s != null) s.close();
-        }catch (IOException e){}
-    }
+
     public static void close(OutputStream s){
         try{
             if(s != null) s.close();

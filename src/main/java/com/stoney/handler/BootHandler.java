@@ -5,7 +5,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,6 +19,7 @@ public class BootHandler extends BaseHandler{
     public static void main(String[] args) throws IOException {
         System.out.println(INDEX_URL);
         start(INDEX_URL);
+        saveHtml(INDEX_URL);
         ExecutorService service = Executors.newFixedThreadPool(10);
         service.execute(new StaticHandlerTask(mediaQueue));
         service.execute(new PageHandlerTask(pageQueue));
@@ -92,5 +93,6 @@ public class BootHandler extends BaseHandler{
             if(isNotEmpty(href)) putPage(href);
         }
     }
+
 
 }
