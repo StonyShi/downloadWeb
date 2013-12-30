@@ -36,7 +36,6 @@ public class DBRedis {
     }
     public static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
     private  static JedisPool jedisPool = null;
-    private static boolean isSave = true;
     private static String host = "127.0.0.1";
     static{
         logger.debug("|--->....... init .........");
@@ -102,7 +101,7 @@ public class DBRedis {
      * @return
      */
     public static boolean jedisValid(){
-        return isSave && jedisPool != null;
+        return jedisPool != null;
     }
     /**
      * KEY是否存在
