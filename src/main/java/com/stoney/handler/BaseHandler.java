@@ -48,7 +48,12 @@ public class BaseHandler {
             file.mkdirs();
         }
     }
-
+    public static void reStart(String url){
+        try {
+            BootHandler.start(url);
+        } catch (IOException e) {
+        }
+    }
     public static void saveHtml(String url){
         int timeoutMillis = 20000;
         String path = SAVE_DIR + "/" + extaFileDir(url) + "/" + extaFilePath(url);
@@ -268,6 +273,17 @@ public class BaseHandler {
             e.printStackTrace();
         }
         return s.toUpperCase();
+    }
+
+    public static void download(String url, String toPath) throws IOException {
+        download(new URL(url), new File(toPath));
+    }
+    public static void download(String url, File to) throws IOException {
+        download(new URL(url), to);
+    }
+    public static void download(URL url, File to) throws IOException {
+        com.google.common.io.Files.copy(com.google.common.io.Resources.asByteSource(url), to);
+        print("Successed download file %s.",to.getName());
     }
 
 }

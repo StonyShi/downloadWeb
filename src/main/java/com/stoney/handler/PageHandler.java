@@ -26,40 +26,28 @@ public class PageHandler extends BaseHandler{
         print("StaticHandler process %s.", url);
         String path = SAVE_DIR + "/" + extaFileDir(url) + "/" + extaFilePath(url);
         File outFile = new File(path + "/" + extaFileName(url) + "_" + extaFileQuery(url) + ".html");
+        boolean flag = true;
         if(isSaveFile(outFile)){
             checkDir(path);
             try {
-                URL uri = new URL(url);
-                HttpURLConnection conn = (HttpURLConnection) uri.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setConnectTimeout(20000);
-                conn.setReadTimeout(2000);
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
-                conn.setUseCaches(false);
-                conn.connect();
-                if(savePage(conn, outFile)){
+                download(new URL(url), outFile);
+            } catch (Exception e) {
+                flag = false;
+                index.incrementAndGet();
+                e.printStackTrace();
+            } finally {
+                if(flag){
                     addSucceed(url);
                     print("[%d] Save Page succeed.", index.get(), url, outFile.getAbsoluteFile());
                 } else{
                     putMedia(url);
                     print("[%d] Save Page <%s>|##|<%s> failed.", index.get(), url, outFile.getAbsoluteFile());
                 }
-
-            } catch (Exception e) {
-                addFailed(url);
-                putMedia(url);
-                print("[%d] Get Page <%s> error.", index.get() ,url);
-                index.incrementAndGet();
-                e.printStackTrace();
-            } finally {
-                try {
-                    BootHandler.start(url);
-                } catch (IOException e) {
-                }
+                reStart(url);
             }
         }
     }
+
     public static boolean savePage(HttpURLConnection conn, File outfile) throws Exception {
         boolean flag = false;
         if(conn.getResponseCode() == 200) {

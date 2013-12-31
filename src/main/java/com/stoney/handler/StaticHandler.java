@@ -22,46 +22,35 @@ public class StaticHandler extends BaseHandler{
 
     private static AtomicInteger index = new AtomicInteger(0);
 
-    public static boolean checkImge(String name){
-        return (name.indexOf(".jpg") != -1) || (name.indexOf(".gif") != -1) || (name.indexOf(".png") != -1);
-    }
+
     public static void process(String url){
         print("StaticHandler process %s.", url);
         String path = SAVE_DIR + "/" + extaFileDir(url) + "/" + extaFilePath(url);
         File outFile = new File(path + "/" + extaFileName(url));
+        boolean flag = true;
         if(isSaveFile(outFile)){
             checkDir(path);
             try {
-                URL uri = new URL(url);
-                HttpURLConnection conn = (HttpURLConnection) uri.openConnection();
-                conn.setRequestMethod("GET");
-                conn.setConnectTimeout(20000);
-                conn.setReadTimeout(2000);
-                conn.setDoInput(true);
-                conn.setDoOutput(true);
-                conn.setUseCaches(false);
-                conn.connect();
-                if(saveMedia(conn, outFile)){
+                download(new URL(url), outFile);
+            } catch (Exception e) {
+                flag = false;
+                index.incrementAndGet();
+                e.printStackTrace();
+            } finally {
+                if(flag){
                     addSucceed(url);
                     print("[%d] Save Media succeed.", index.get(), url, outFile.getAbsoluteFile());
                 } else{
                     putMedia(url);
                     print("[%d] Save Media <%s>|##|<%s> failed.", index.get(), url, outFile.getAbsoluteFile());
                 }
-
-            } catch (Exception e) {
-                addFailed(url);
-                putMedia(url);
-                print("[%d] Get Media <%s> error.", index.get() ,url);
-                index.incrementAndGet();
-                e.printStackTrace();
-            } finally {
-                try {
-                    BootHandler.start(url);
-                } catch (IOException e) {
-                }
+                reStart(url);
             }
         }
+    }
+
+    public static boolean checkImge(String name){
+        return (name.indexOf(".jpg") != -1) || (name.indexOf(".gif") != -1) || (name.indexOf(".png") != -1);
     }
     public static boolean saveMedia(HttpURLConnection conn, File outfile) throws Exception {
         boolean flag = false;

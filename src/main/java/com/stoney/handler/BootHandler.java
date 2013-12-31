@@ -17,7 +17,7 @@ public class BootHandler extends BaseHandler{
 
 
     public static void main(String[] args) throws IOException {
-        System.out.println(INDEX_URL);
+        print(INDEX_URL);
         start(INDEX_URL);
         saveHtml(INDEX_URL);
         ExecutorService service = Executors.newFixedThreadPool(10);
