@@ -20,8 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BaseHandler {
 
-    static final String MATH_URL = "spicy.althemist.com";
-    static final String INDEX_URL = "http://spicy.althemist.com/index.php";
+    static final String MATH_URL = "templatation.com";
+    static final String INDEX_URL = "http://templatation.com/justshop/layout2/index.php";
     static final String BASE_DIR = "d:/Website/";
     static String SAVE_DIR = BASE_DIR + MATH_URL;
 
@@ -282,8 +282,13 @@ public class BaseHandler {
         download(new URL(url), to);
     }
     public static void download(URL url, File to) throws IOException {
-        com.google.common.io.Files.copy(com.google.common.io.Resources.asByteSource(url), to);
-        print("Successed download file %s.",to.getName());
+        if(to.exists()) {
+            print("save before src : %s", url);
+        } else {
+            com.google.common.io.Files.copy(com.google.common.io.Resources.asByteSource(url), to);
+//        print("Successed download file %s.",to.getName());
+            print("save src : %s", url);
+        }
     }
 
 }
