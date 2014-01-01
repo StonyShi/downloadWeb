@@ -50,4 +50,5 @@ public abstract class SpiderAbstractHeadler {
             if(s != null) s.close();
         }catch (IOException e){}
     }
+
 }
