@@ -14,15 +14,17 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Stony on 13-12-29.
  */
-public class BaseHandler {
+public abstract class BaseHandler {
 
-    static final String MATH_URL = "spicy.althemist.com";
-    static final String INDEX_URL = "http://spicy.althemist.com/index.php";
-    static final String BASE_DIR = "d:/Website/";
+    static final String MATH_URL = "gebo-admin-3.tzdthemes.com";
+    static final String INDEX_URL = "http://themes.laborator.co/neon/";
+    static final String BASE_DIR = "G:/Website/";
     static String SAVE_DIR = BASE_DIR + MATH_URL;
 
     public static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
@@ -30,12 +32,18 @@ public class BaseHandler {
     static int MaxTotal = 30;
     static int MaxPer = 10;
     public static ArrayBlockingQueue mediaQueue;
+    public static ArrayBlockingQueue cssQueue;
     public static ArrayBlockingQueue pageQueue;
     public static Map failed;
     public static Map succeed;
 
     public static boolean Must_Math = true;
-    private final static int timeOut = 20000;
+    private final static int timeOut = 25000;
+
+    public static String regex =
+            "([\\s]*)(url[\\s]*[\\(]{1}[\\s]*[\"|']?)([a-zA-Z0-9:\\/\\.\\-\\_\\?\\-\\=\\#\\&]+)([\\s]*[\"|']?[\\)]{1})";
+    private final static String[] FOOT_SUFFIX = {".eot",".woff",".ttf",".svg"};
+
 
     static {
         initDir();
@@ -78,6 +86,13 @@ public class BaseHandler {
     public static void putMedia(String url){
         try {
             if(isUrl(url)) mediaQueue.put(url);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void putCss(String url){
+        try {
+            if(isUrl(url)) cssQueue.put(url);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -155,6 +170,7 @@ public class BaseHandler {
     }
     public static void initQueue(){
         mediaQueue = new ArrayBlockingQueue(20000);
+        cssQueue = new ArrayBlockingQueue(20000);
         pageQueue = new ArrayBlockingQueue(20000);
         failed = new ConcurrentHashMap(10000);
         succeed = new ConcurrentHashMap(10000);
@@ -174,7 +190,25 @@ public class BaseHandler {
 
 
 
-
+    public static String absUrl(String baseUri, String relUrl) {
+        URL base;
+        try {
+            try {
+                base = new URL(baseUri);
+            } catch (MalformedURLException e) {
+                // the base is unsuitable, but the attribute may be abs on its own, so try that
+                URL abs = new URL(relUrl);
+                return abs.toExternalForm();
+            }
+            // workaround: java resolves '//path/file + ?foo' to '//path/?foo', not '//path/file?foo' as desired
+            if (relUrl.startsWith("?"))
+                relUrl = base.getPath() + relUrl;
+            URL abs = new URL(base, relUrl);
+            return abs.toExternalForm();
+        } catch (MalformedURLException e) {
+            return "";
+        }
+    }
     public static void close(OutputStream s){
         try{
             if(s != null) s.close();

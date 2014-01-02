@@ -22,10 +22,27 @@ public class BootHandler extends BaseHandler{
         saveHtml(INDEX_URL);
         ExecutorService service = Executors.newFixedThreadPool(10);
         service.execute(new StaticHandlerTask(mediaQueue));
+        service.execute(new CssHandlerTask(cssQueue));
         service.execute(new PageHandlerTask(pageQueue));
         service.shutdown();
     }
 
+    static class CssHandlerTask implements Runnable{
+        private ArrayBlockingQueue queue;
+
+        public CssHandlerTask(ArrayBlockingQueue queue) {
+            this.queue = queue;
+        }
+
+        @Override
+        public void run() {
+            while(true){
+                String url = (String) queue.poll();
+                if(isNotEmpty(url))
+                    StaticHandler.processCss(url);
+            }
+        }
+    }
     static class StaticHandlerTask implements Runnable{
         private ArrayBlockingQueue queue;
 

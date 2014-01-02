@@ -5,6 +5,8 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -13,6 +15,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Stony on 13-12-29.
@@ -49,6 +53,38 @@ public class StaticHandler extends BaseHandler{
         }
     }
 
+    public static void saveCss(String url){
+        if(url.endsWith(".png") || url.endsWith(".gif") || url.endsWith(".jpg") || url.endsWith(".ico")){
+            print(" * %s: <%s>", "img", url);
+            process(url);
+        }
+        if(url.endsWith(".ttf") || url.endsWith(".woff") || url.endsWith(".eot") || url.endsWith(".svg")){
+            print(" * %s: <%s>", "font", url);
+            process(url);
+        }
+    }
+    public static void processCss(String url){
+        Document doc = null;
+        try {
+            doc = Jsoup.connect(url).get();
+            String baseUri = doc.baseUri();
+            java.util.regex.Pattern pat = Pattern.compile(regex);
+            Matcher mat = pat.matcher(doc.text());
+            while(mat.find()){
+                String src = mat.group(3);
+                if(src.startsWith("http:") || src.startsWith("https:")){
+                }else{
+                    src = absUrl(baseUri, src);
+                }
+                saveCss(src);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            putCss(url);
+        } finally {
+            process(url);
+        }
+    }
     public static boolean checkImge(String name){
         return (name.indexOf(".jpg") != -1) || (name.indexOf(".gif") != -1) || (name.indexOf(".png") != -1);
     }
