@@ -14,13 +14,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by Stony on 13-12-29.
  */
-public abstract class BaseHandler {
+public class BaseHandler {
 
     static final String MATH_URL = "gebo-admin-3.tzdthemes.com";
     static final String INDEX_URL = "http://themes.laborator.co/neon/";
@@ -40,6 +38,10 @@ public abstract class BaseHandler {
     public static boolean Must_Math = true;
     private final static int timeOut = 25000;
 
+
+    public static void main(String[] args) throws IOException {
+        BootHandler.bootStart();
+    }
     static {
         initDir();
         initQueue();
@@ -81,13 +83,6 @@ public abstract class BaseHandler {
     public static void putMedia(String url){
         try {
             if(isUrl(url)) mediaQueue.put(url);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-    public static void putCss(String url){
-        try {
-            if(isUrl(url)) cssQueue.put(url);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

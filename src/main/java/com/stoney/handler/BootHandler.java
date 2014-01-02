@@ -17,6 +17,10 @@ public class BootHandler extends BaseHandler{
 
 
     public static void main(String[] args) throws IOException {
+        bootStart();
+    }
+
+    public static void bootStart() throws IOException{
         print(INDEX_URL);
         start(INDEX_URL);
         saveHtml(INDEX_URL);
@@ -26,7 +30,6 @@ public class BootHandler extends BaseHandler{
         service.execute(new PageHandlerTask(pageQueue));
         service.shutdown();
     }
-
     static class CssHandlerTask implements Runnable{
         private ArrayBlockingQueue queue;
 
