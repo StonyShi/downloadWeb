@@ -244,6 +244,9 @@ public class SpiderBootHeadler extends SpiderHeadler{
             } catch (InterruptedException ee) {
                 ee.printStackTrace();
             }
+        } finally {
+            SpiderStaticsHeadler.saveStatic(url);
+            saveUrlToRedis(url);
         }
     }
     public static void save(String url) {

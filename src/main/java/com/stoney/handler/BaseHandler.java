@@ -40,11 +40,6 @@ public abstract class BaseHandler {
     public static boolean Must_Math = true;
     private final static int timeOut = 25000;
 
-    public static String regex =
-            "([\\s]*)(url[\\s]*[\\(]{1}[\\s]*[\"|']?)([a-zA-Z0-9:\\/\\.\\-\\_\\?\\-\\=\\#\\&]+)([\\s]*[\"|']?[\\)]{1})";
-    private final static String[] FOOT_SUFFIX = {".eot",".woff",".ttf",".svg"};
-
-
     static {
         initDir();
         initQueue();
@@ -170,7 +165,6 @@ public abstract class BaseHandler {
     }
     public static void initQueue(){
         mediaQueue = new ArrayBlockingQueue(20000);
-        cssQueue = new ArrayBlockingQueue(20000);
         pageQueue = new ArrayBlockingQueue(20000);
         failed = new ConcurrentHashMap(10000);
         succeed = new ConcurrentHashMap(10000);
@@ -190,25 +184,7 @@ public abstract class BaseHandler {
 
 
 
-    public static String absUrl(String baseUri, String relUrl) {
-        URL base;
-        try {
-            try {
-                base = new URL(baseUri);
-            } catch (MalformedURLException e) {
-                // the base is unsuitable, but the attribute may be abs on its own, so try that
-                URL abs = new URL(relUrl);
-                return abs.toExternalForm();
-            }
-            // workaround: java resolves '//path/file + ?foo' to '//path/?foo', not '//path/file?foo' as desired
-            if (relUrl.startsWith("?"))
-                relUrl = base.getPath() + relUrl;
-            URL abs = new URL(base, relUrl);
-            return abs.toExternalForm();
-        } catch (MalformedURLException e) {
-            return "";
-        }
-    }
+
     public static void close(OutputStream s){
         try{
             if(s != null) s.close();
@@ -316,8 +292,13 @@ public abstract class BaseHandler {
         download(new URL(url), to);
     }
     public static void download(URL url, File to) throws IOException {
-        com.google.common.io.Files.copy(com.google.common.io.Resources.asByteSource(url), to);
-        print("Successed download file %s.",to.getName());
+        if(to.exists()) {
+            print("save before src : %s", url);
+        } else {
+            com.google.common.io.Files.copy(com.google.common.io.Resources.asByteSource(url), to);
+//        print("Successed download file %s.",to.getName());
+            print("save src : %s", url);
+        }
     }
 
 }

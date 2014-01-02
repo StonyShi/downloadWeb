@@ -616,5 +616,6 @@ public class DBRedis {
         setStr("shi", "hui");
         System.out.println(getStr("shi"));
         System.out.println(getKeys("*"));
+        deleteAllData();
     }
 }
